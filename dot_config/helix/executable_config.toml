@@ -1,0 +1,53 @@
+theme = "catppuccin_macchiato"
+
+[editor]
+shell = ["nu", "-c"]
+popup-border = "all"
+
+[editor.statusline]
+left = ["mode", "spinner",
+  "file-base-name","file-type","file-modification-indicator",
+  "read-only-indicator",]
+center = ["diagnostics", "separator", "version-control"]
+right = ["selections", "register", "position"]
+
+[editor.lsp]
+display-inlay-hints = true
+
+[editor.cursor-shape]
+select = "underline"
+
+[editor.auto-save]
+focus-lost = true
+
+[editor.indent-guides]
+render = true
+character = "┆"
+skip-levels = 2
+
+[editor.smart-tab]
+enable = false
+
+[keys.normal]
+j = "move_char_left"
+k = "move_visual_line_down"
+l = "move_visual_line_up"
+";" = "move_char_right"
+h = "collapse_selection"
+
+[keys.insert]
+up = "no_op"
+down = "no_op"
+left = "no_op"
+right = "no_op"
+pageup = "no_op"
+pagedown = "no_op"
+home = "no_op"
+end = "no_op"
+
+[keys.select]
+j = "extend_char_left"
+k = "extend_visual_line_down"
+l = "extend_visual_line_up"
+";" = "extend_char_right"
+h = "collapse_selection"
