@@ -1,0 +1,215 @@
+(defwindow bar
+  :monitor 1
+  :stacking "fg"
+  :class "bar"
+  :exclusive true
+  :geometry (geometry :x "0%"
+                      :y "0%"
+                      :width "100%"
+                      :height "30px"
+                      :anchor "top center")
+ (bar))
+
+(defwindow left-bar
+  :monitor 0
+  :stacking "fg"
+  :class "bar"
+  :exclusive true
+  :geometry (geometry :x "0%"
+                      :y "0%"
+                      :width "100%"
+                      :height "30px"
+                      :anchor "top center")
+    (bar))
+
+(defwidget bar []
+    (centerbox :orientation "h"
+      (lefties)
+      (window-title)
+      (righties)))
+
+(defwidget lefties []
+    (box :class "left"
+         :orientation "h"
+         :halign "start"
+         :space-evenly false
+        (powermenu-button)
+        (workspaces)))
+
+(defwidget righties []
+    (box :class "right"
+         :orientation "h"
+         :space-evenly false
+         :halign "end"
+         :spacing 15
+        (volume-bar)
+        (system-tray)
+        ))
+(deflisten window-title-listen 
+  :initial `Nothing :3`
+  `~/.local/bin/hyprctl_active_window_title`)
+
+(defwidget window-title []
+ (label :text window-title-listen))
+(defwidget workspaces []
+  (box :class "workspaces"
+       :orientation "h"
+       :space-evenly true
+       :halign "start"
+       :spacing 10
+    (button :onclick "hyprctl dispatch workspace 1" 1)
+    (button :onclick "hyprctl dispatch workspace 2" 2)
+    (button :onclick "hyprctl dispatch workspace 3" 3)
+    (button :onclick "hyprctl dispatch workspace 4" 4)
+    (button :onclick "hyprctl dispatch workspace 5" 5)
+    (button :onclick "hyprctl dispatch workspace 6" 6)
+    (button :onclick "hyprctl dispatch workspace 7" 7)
+    (button :onclick "hyprctl dispatch workspace 8" 8)))
+(defwidget powermenu-button []
+  (box :class "powermenu-button"
+       ; :width 10
+       :visible true
+       :tooltip "Powermenu!"
+    (button :onclick "eww open powermenu" 
+    (image :path "/home/chiffa/Downloads/yuuka.png" 
+           :image-height 25))
+  ))
+
+(defwidget system-tray [] 
+  (box :class "systray"
+       ; :width 30
+       :height 30
+       :visible true
+      (systray :spacing 5))
+)
+
+(defwidget volume-bar []
+  (box :class "volbar"
+       :width 100
+       :height 30
+       :visible true
+       :orientation "v"
+       :hexpand false
+       :space-evenly false
+       (label :text np 
+              :class "volbar-label"
+              :truncate true
+              :limit-width 10
+              :hexpand false)
+       (overlay (progress :value volume 
+                 :class "volbar-bar" 
+                 :tooltip volume
+                 :orientation "h"
+                 :width 100
+                 :hexpand false) 
+                (progress :value "${volume % 100}" 
+                 :class "volbar-bar-overlay" 
+                 :tooltip volume
+                 :orientation "h"
+                 :width 100
+                 :hexpand false
+                 )))
+)
+
+(defwindow powermenu
+  :monitor 0 
+  :stacking "fg"
+  :windowtype "normal"
+  :wm-ignore true
+  :geometry (geometry :width "100%" :height "100%")
+  (powermenu_layout))
+
+(defpoll volume :interval "200ms"
+  :initial `/bin/nu -c 'mut vol = (wpctl get-volume @DEFAULT_AUDIO_SINK@ | split column " " | get column2); ($vol.0 | into float) * 100.0'`
+  `/bin/nu -c 'mut vol = (wpctl get-volume @DEFAULT_AUDIO_SINK@ | split column " " | get column2); ($vol.0 | into float) * 100.0'`)
+(defpoll np :interval "200ms"
+  :initial `playerctl metadata title`
+  `playerctl metadata title`
+)
+
+(defpoll time :interval "5s"
+  :initial `date +'{"hour":"%H","min":"%M"}'`
+  `date +'{"hour":"%H","min":"%M"}'`)
+(defpoll net :interval "100s"
+  :initial `N/A`
+  `nmcli -t -f SIGNAL,ACTIVE device wifi \
+    | awk -F':' '{if($2=="yes")print$1}'`)
+
+(defwidget powermenu_layout []
+  (box :class "layout-box" :space-evenly false :orientation "vertical"
+       :style "background-image: url('./wallpaper')"
+    (box :valign "start" :space-evenly false :spacing 25
+      (_sundial)
+      (_battery :status {EWW_BATTERY.BAT0.status}
+                :battery {EWW_BATTERY.BAT0.capacity}
+                :charge "" :one "" :two "" :three "" :four ""
+                :five "" :six "" :seven "")
+      (_network :strength net :offline "" :excellent "" :good ""
+                :okay "" :slow "")
+      (label :text "|" :class "sep")
+      (button :onclick "eww close powermenu" :class "close-btn" ""))
+    (box :space-evenly false :hexpand true :vexpand true
+      (box :spacing 15 :class "tm-box" :space-evenly false
+            :valign "end" :halign "start"
+        (label :text "")
+        (label :text "${time.hour}  ${time.min}"))
+      (_buttons :shutdown "poweroff" :reboot "reboot"
+                :logout "loginctl kill-session self"
+                :shutdown_icon "" :reboot_icon ""
+                :logout_icon ""))))
+
+(defwidget _battery [battery status one two three
+                    four five six seven charge]
+  (box :class "bat-box" :space-evenly false :spacing 8
+    (label :text {status == 'Charging' ? charge :
+      battery < 15 ? seven :
+        battery < 30 ? six :
+          battery < 45 ? five :
+            battery < 60 ? four :
+              battery < 75 ? three :
+                battery < 95 ? two : one})))
+
+(defwidget _network [strength offline excellent
+                    good okay slow]
+  (box :class "net-box"
+       :space-evenly false
+       :spacing 8
+    (label :text {strength == "" ? offline :
+      strength < 26 ? slow :
+        strength < 51 ? okay :
+          strength < 76 ? good : excellent})))
+
+(defwidget _buttons [shutdown shutdown_icon reboot
+                    reboot_icon logout logout_icon]
+  (box :class "btns-box" :spacing 5
+       :vexpand true :hexpand true
+       :valign "end" :halign "end"
+       :space-evenly false
+    (button :onclick shutdown shutdown_icon)
+    (button :onclick reboot reboot_icon)
+    (button :onclick logout logout_icon)))
+
+(defwidget _sundial []
+  (label :class "sundial-lbl" :halign "end" :hexpand true
+         :text {time.hour >= 2 && time.hour <= 4 ? "Early Morning" :
+               time.hour <= 5 ? "Dawn" :
+               time.hour >= 6
+                && (time.hour <= 8 && time.min <= 59)
+                  ? "Morning" :
+               time.hour >= 9
+                 && (time.hour <= 11 && time.min <= 59)
+                   ? "Late Morning" :
+               time.hour == 12 && time.min <= 29
+                 ? "Midday" :
+               time.hour >= 12 && time.hour <= 16
+                 ? "Afternoon" :
+               time.hour > 16 && time.hour <= 17
+                 ? "Late Afternoon" :
+               (time.hour >= 17 && time.min <= 1)
+                 || (time.hour <= 18 && time.min <= 20)
+                   ? "Early Evening" :
+               time.hour >= 18 && time.hour <= 19
+                 ? "Dusk" :
+               time.hour > 19 && time.hour <= 21
+                 ? "Late Evening" :
+               time.hour > 21 ? "Night" : "Midnight"}))
