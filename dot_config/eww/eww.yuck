@@ -102,7 +102,7 @@
                  :orientation "h"
                  :width 100
                  :hexpand false) 
-                (progress :value "${volume % 100}" 
+                (progress :value "${volume - 100}" 
                  :class "volbar-bar-overlay" 
                  :tooltip volume
                  :orientation "h"
