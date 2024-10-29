@@ -87,7 +87,7 @@
   (box :class "volbar"
        :width 100
        :height 30
-       :visible true
+       :visible {volume == "" ? true : false}
        :orientation "v"
        :hexpand false
        :space-evenly false
@@ -124,7 +124,7 @@
   `/bin/nu -c 'mut vol = (wpctl get-volume @DEFAULT_AUDIO_SINK@ | split column " " | get column2); ($vol.0 | into float) * 100.0'`)
 (defpoll np :interval "200ms"
   :initial `playerctl metadata title`
-  `playerctl metadata title`
+  ""
 )
 
 (defpoll time :interval "5s"
